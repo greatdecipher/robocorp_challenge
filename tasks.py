@@ -1,6 +1,96 @@
 from robocorp.tasks import task
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager as cache
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+import logging
+import time
+
+class ThoughfulScraper:
+    def __init__(self, *args, **kwargs):
+        self.driver = None
+        self.logger = logging.getLogger(__name__)
+        self.configure_logger()
+        self.green = "\033[92m"
+        self.red = "\033[91m"
+        self.blue = "\033[94m"
+        self.yellow = "\033[93m"
+        self.reset = "\033[0m"
+
+
+    def configure_logger(self):
+        # Set up logging format and level
+        handler = logging.StreamHandler()  # Log to console
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+
+        # Set log level and add handler to the logger
+        self.logger.setLevel(logging.INFO)
+        self.logger.addHandler(handler)
+        self.logger.propagate = False  # Avoid duplicate logs from the root logger
+
+    def set_chrome_options(self):
+        options = webdriver.ChromeOptions()
+        # options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--lang=en-US')
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-gpu")
+        options.add_argument('--disable-web-security')
+        options.add_argument("--start-maximized")
+        options.add_experimental_option("excludeSwitches", ["enable-logging"])
+        return options
+    
+    def set_webdriver(self, browser="Chrome"):
+        options = self.set_chrome_options()
+        executable_driver_path = cache().install()
+        self.logger.warning(f"{self.yellow}Using driver: {executable_driver_path}{self.reset}")
+        # Start the Chrome instance correctly
+        self.driver = webdriver.Chrome(options=options)
+
+    def goto_link(self, link):
+        self.logger.info(f"{self.blue}Navigating to {link}{self.reset}")
+        self.driver.get(link)
+        self.logger.info(f"{self.green}Page loaded successfully{self.reset}")
+
+    def explicit_wait_for_element(self, timeout, by, locator):
+        element = WebDriverWait(self.driver, timeout).until(
+            EC.presence_of_element_located((by, locator))
+        )
+        return element
+
+  
+    def load_home_page(self):
+        #check if the search button seen
+        self.logger.info(f"{self.blue}Checking if the search button is seen{self.reset}")
+        search_btn_element = self.explicit_wait_for_element(15, By.XPATH, '//button[@aria_label="Open search bar"]')
+        self.logger.info(f"{self.green}Expected button seen{self.reset}")
+        #clicking the search button
+        self.logger.info(f"{self.blue}Attempt to click the search button{self.reset}")
+        search_btn_element.click()
+        self.logger.info(f"{self.green}Clicked the search button{self.reset}")
+        self.driver.implicitly_wait(5)
+
+
+    def driver_quit(self):
+        if self.driver:
+            self.logger.info(f"{self.blue}Quitting the driver{self.reset}")
+            self.driver.quit()
 
 @task
 def minimal_task():
-    message = "Hello"
-    message = message + " World!"
+    scraper = ThoughfulScraper()
+    scraper.set_webdriver()
+    # Perform scraping tasks here
+    try:
+        # scraper.goto_link("https://apnews.com/")
+        scraper.goto_link("https://news.yahoo.com/")
+        scraper.load_home_page()
+
+    except Exception as e:
+        scraper.logger.error(f"{scraper.red}Error: {e}{scraper.reset}")
+
+    finally:
+        # Close the driver
+        scraper.driver_quit()
