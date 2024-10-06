@@ -75,8 +75,25 @@ class ThoughfulScraper:
         for char in text:
             time.sleep(self.wait_time(0.03, 0.19))
             locator.send_keys(char)
+            
+    def retry_page_decorator(func):
+        def wrapper(self, *args, **kwargs):
+            attempts = 5
+            for _ in range(attempts):
+                try:
+                    return func(self, *args, **kwargs)
+                except Exception as e:
+                    self.logger.error(f"{self.red}Error: {e}{self.reset}")
+                    self.logger.warning(f"{self.yellow}Retrying...{self.reset}")
+                    self.driver.refresh()
+                    time.sleep(self.wait_time(8,11))
+            self.logger.error(f"{self.red}Failed after {attempts} attempts{self.reset}")
+            raise Exception("Failed after 3 attempts")
+        return wrapper
 
+    @retry_page_decorator
     def goto_link(self, link):
+        self.logger.info(f"{self.blue}Goto Link Func Starting{self.reset}")
         self.logger.info(f"{self.blue}Navigating to {link}{self.reset}")
         self.driver.get(link)
         self.logger.info(f"{self.green}Page loaded successfully{self.reset}")

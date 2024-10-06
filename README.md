@@ -47,6 +47,11 @@ Once the virtual environment is activated, install the necessary dependencies by
 pip install -r requirements.txt
 ```
 
+### Step 5: Now navigate and run the main script tasks.py
+```bash
+python -m tasks
+```
+
 ## Deployment to Robocorp
 Details for setting up the Robocorp environment and deploying the scraper is provided by Robocorp documentation.
 
