@@ -93,9 +93,13 @@ class ThoughfulScraper:
 
     @retry_page_decorator
     def goto_link(self, link):
-        self.logger.info(f"{self.blue}Goto Link Func Starting{self.reset}")
+        self.logger.info(f"{self.blue}goto_link Func Starting{self.reset}")
         self.logger.info(f"{self.blue}Navigating to {link}{self.reset}")
         self.driver.get(link)
+        self.logger.info(f"{self.green}Got to link successfully{self.reset}")
+        WebDriverWait(self.driver, 50).until(
+            lambda driver: driver.execute_script('return document.readyState') == 'complete'
+        )
         self.logger.info(f"{self.green}Page loaded successfully{self.reset}")
 
     def explicit_wait_for_element(self, timeout, by, locator):
