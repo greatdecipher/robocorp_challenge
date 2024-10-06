@@ -4,6 +4,7 @@ from webdriver_manager.chrome import ChromeDriverManager as cache
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+
 import logging
 import pandas as pd
 import time, random
@@ -19,7 +20,8 @@ class ThoughfulScraper:
         self.yellow = "\033[93m"
         self.reset = "\033[0m"
         #initialize a pandas dataframe to store the data
-
+        self.df = pd.DataFrame(columns=["Title", "Date","Description", "Picture Filename",
+                                        "Count of Search Phrases", "Contains Money Phrase",])
 
 
     def configure_logger(self):
@@ -75,7 +77,7 @@ class ThoughfulScraper:
         return element
 
   
-    def load_home_page(self):
+    def load_home_page(self, topic):
         #check if the search button seen
         self.logger.info(f"{self.blue}Checking if the search button is seen{self.reset}")
         search_btn_element = self.explicit_wait_for_element(15, By.XPATH, '//button[@class="SearchOverlay-search-button"]')
@@ -93,7 +95,7 @@ class ThoughfulScraper:
         #entering the search keyword
         self.logger.info(f"{self.blue}Entering the search keyword{self.reset}")
         time.sleep(self.wait_time(1.2, 2.2))
-        search_value = "Hurricane"
+        search_value = topic
         self.type_with_random_delay(search_input_element, search_value)
         self.logger.info(f"{self.green}Entered '{search_value}' in the search bar{self.reset}")
         time.sleep(self.wait_time(0.3, 1.4))
@@ -117,22 +119,35 @@ class ThoughfulScraper:
         category_dropdown_element.click()
         self.logger.info(f"{self.green}Clicked the category dropdown{self.reset}")
         time.sleep(self.wait_time(0.5, 1.5))
+
+
+    def check_if_category_is_present(self, category_name):
         #click the category Live Blogs, the whitespaces need to be there
-        category = """
-            Live Blogs
+        category = f"""
+            {category_name}
         """
         self.logger.info(f"{self.blue}Checking if the focus category is seen{self.reset}")
         category_element = self.explicit_wait_for_element(15, By.XPATH, f'//span[text()="{category}"]')
         self.logger.info(f"{self.green}Expected focus category seen{self.reset}")
         #clicking the category
-        self.logger.info(f"{self.blue}Attempting to click the category '{category}'{self.reset}")
+        self.logger.info(f"{self.blue}Attempting to click the category '{category_name}'{self.reset}")
         category_element.click()
-        self.logger.info(f"{self.green}Clicked the category '{category}'{self.reset}")
+        self.logger.info(f"{self.green}Clicked the category '{category_name}'{self.reset}")
         time.sleep(self.wait_time(1.5, 2.5))
 
 
-
-
+    def scrape_data(self):
+        #make sure to load the page first
+        self.logger.info(f"{self.blue}Loading the data...{self.reset}")
+        WebDriverWait(self.driver, 20).until(lambda driver: driver.execute_script("return document.readyState") in ["interactive", "complete"])
+        self.logger.info(f"{self.green}All feeds are loaded{self.reset}")
+        #check the entry point element
+        self.logger.info(f"{self.blue}Checking if the entry point element is seen{self.reset}")
+        entry_point_element = self.explicit_wait_for_element(15, By.XPATH, '//div[@class="PageList-items"]')
+        self.logger.info(f"{self.green}Expected entry point element seen{self.reset}")
+        #loop through the entry point element
+        
+        
 
     def driver_quit(self):
         if self.driver:
@@ -146,8 +161,10 @@ def minimal_task():
     # Perform scraping tasks here
     try:
         scraper.goto_link("https://apnews.com/")
-        scraper.load_home_page()
+        scraper.load_home_page(topic="Laundering")
         scraper.load_results_and_filter()
+        scraper.check_if_category_is_present(category_name="Videos")
+        scraper.scrape_data()
 
     except Exception as e:
         #if error string error message that is stripped, has first word "Stacktrace".
