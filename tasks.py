@@ -133,22 +133,18 @@ class ThoughfulScraper:
 
 
     def check_if_category_is_present(self):
-        try:
-            #click the category Live Blogs, the whitespaces need to be there
-            category = f"""
-                {self.category_name}
-            """
-            self.logger.info(f"{self.blue}Checking if the focus category is seen{self.reset}")
-            category_element = self.explicit_wait_for_element(15, By.XPATH, f'//span[text()="{category}"]')
-            self.logger.info(f"{self.green}Expected focus category seen{self.reset}")
-            #clicking the category
-            self.logger.info(f"{self.blue}Attempting to click the category '{self.category_name}'{self.reset}")
-            category_element.click()
-            self.logger.info(f"{self.green}Clicked the category '{self.category_name}'{self.reset}")
-            time.sleep(self.wait_time(1.5, 2.5))
-        except Exception as e:
-            self.logger.error(f"{self.red}Category '{self.category_name}' not found{self.reset}")
-            self.driver_quit()
+        #click the category Live Blogs, the whitespaces need to be there
+        category = f"""
+            {self.category_name}
+        """
+        self.logger.info(f"{self.blue}Checking if the focus category is seen{self.reset}")
+        category_element = self.explicit_wait_for_element(15, By.XPATH, f'//span[text()="{category}"]')
+        self.logger.info(f"{self.green}Expected focus category seen{self.reset}")
+        #clicking the category
+        self.logger.info(f"{self.blue}Attempting to click the category '{self.category_name}'{self.reset}")
+        category_element.click()
+        self.logger.info(f"{self.green}Clicked the category '{self.category_name}'{self.reset}")
+        time.sleep(self.wait_time(1.5, 2.5))
 
 
     def scrape_data(self):
