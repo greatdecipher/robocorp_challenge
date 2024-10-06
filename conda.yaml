@@ -14,3 +14,4 @@ dependencies:
     - robocorp==2.0.1             # https://pypi.org/project/robocorp
     - robocorp-browser==2.3.3     # https://pypi.org/project/robocorp-browser
     - pandas==2.2.3               # https://pandas.pydata.org/docs/whatsnew/index.html
+    - XlsxWriter==3.2.0           # https://xlsxwriter.readthedocs.io/working_with_pandas.html

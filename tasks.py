@@ -11,12 +11,14 @@ import pandas as pd
 import time, random
 import datetime
 import re
+import xlsxwriter
 
 class ThoughfulScraper:
     def __init__(self, *args, **kwargs):
         self.driver = None
-        self.search_phrase = kwargs.get("search_phrase")
-        self.category_name = kwargs.get("category_name")
+        self.headless = kwargs['headless']
+        self.search_phrase = kwargs['search_phrase']
+        self.category_name = kwargs['category_name']
         self.logger = logging.getLogger(__name__)
         self.configure_logger()
         self.green = "\033[92m"
@@ -43,7 +45,9 @@ class ThoughfulScraper:
 
     def set_chrome_options(self):
         options = webdriver.ChromeOptions()
-        # options.add_argument('--headless')
+        if self.headless:
+            self.logger.warning(f"{self.yellow}Running in headless mode{self.reset}")
+            options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--lang=en-US')
         options.add_argument("--disable-extensions")
@@ -136,9 +140,9 @@ class ThoughfulScraper:
         category_element = self.explicit_wait_for_element(15, By.XPATH, f'//span[text()="{category}"]')
         self.logger.info(f"{self.green}Expected focus category seen{self.reset}")
         #clicking the category
-        self.logger.info(f"{self.blue}Attempting to click the category '{category_name}'{self.reset}")
+        self.logger.info(f"{self.blue}Attempting to click the category '{self.category_name}'{self.reset}")
         category_element.click()
-        self.logger.info(f"{self.green}Clicked the category '{category_name}'{self.reset}")
+        self.logger.info(f"{self.green}Clicked the category '{self.category_name}'{self.reset}")
         time.sleep(self.wait_time(1.5, 2.5))
 
 
@@ -260,7 +264,8 @@ class ThoughfulScraper:
 
 @task
 def minimal_task():
-    scraper = ThoughfulScraper({"search_phrase":"Laundering","category_name":"Videos"})
+    scraper = ThoughfulScraper(search_phrase = "Laundering",
+                                category_name = "Videos", headless = True)
     scraper.set_webdriver()
     # Perform scraping tasks here
     try:
