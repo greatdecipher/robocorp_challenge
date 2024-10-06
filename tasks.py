@@ -1,4 +1,5 @@
 from robocorp.tasks import task
+from robocorp import workitems
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager as cache
 from selenium.webdriver.support.wait import WebDriverWait
@@ -264,8 +265,12 @@ class ThoughfulScraper:
 
 @task
 def minimal_task():
-    scraper = ThoughfulScraper(search_phrase = "Laundering",
-                                category_name = "Videos", headless = True)
+    item = workitems.inputs.current
+    print("Received payload:", item.payload)
+    search_phrase = item.payload.get("search_phrase")
+    category_name = item.payload.get("category_name")
+    scraper = ThoughfulScraper(search_phrase = search_phrase,
+                                category_name = category_name, headless = True)
     scraper.set_webdriver()
     # Perform scraping tasks here
     try:
@@ -293,5 +298,34 @@ def minimal_task():
         scraper.driver_quit()
 
 
+
+
+
 if __name__ == "__main__":
-    minimal_task()
+    scraper = ThoughfulScraper(search_phrase = "Laundering",
+                                category_name = "Videos", headless = True)
+    scraper.set_webdriver()
+    # Perform scraping tasks here
+    try:
+        filename = "apnews_data.xlsx"
+        scraper.goto_link("https://apnews.com/")
+        scraper.load_home_page()
+        scraper.load_results_and_filter()
+        scraper.check_if_category_is_present()
+        df = scraper.scrape_data()
+        scraper.save_to_excel(df, filename)
+
+
+    except Exception as e:
+        #if error string error message that is stripped, has first word "Stacktrace".
+        # then print "This error might be a locator issue, please check the locator"
+        # else print the error message
+        stripped_error = str(e).strip()
+        if "Stacktrace" in stripped_error:
+            scraper.logger.error(f"{scraper.red}This error might be a locator issue, please check the locator.{scraper.reset}")
+        else:
+            scraper.logger.error(f"{scraper.red}Error: {e}{scraper.reset}")
+
+    finally:
+        # Close the driver
+        scraper.driver_quit()
