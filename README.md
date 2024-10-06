@@ -1,64 +1,82 @@
-# Thoughtful Scraper
+# Thoughtful AI Scraper for AP News Integrated with Robocorp
 
-This template leverages the new [Python framework](https://github.com/robocorp/robocorp), the [libraries](https://github.com/robocorp/robocorp/blob/master/docs/README.md#python-libraries) and latest Selenium library.
+## Description
+This project is a Python Selenium-based scraper designed to gather news data from the AP News website. The scraper is integrated into the Robocorp environment for seamless deployment and execution. Instructions for each step will be provided by the developer. The final output is saved into an Excel file with autofit functionality.
 
-This document will provide you with the setup and highlights that you might see in an automation project.
+## Requirements
+1. **Python Version**: 3.10 or higher.
+2. **Robocorp Account Setup**: Ensure you have an active Robocorp account.
+3. **Robocorp Knowledge**: Familiarity with running tasks in Robocorp and setting up Work Items.
+4. **Robocorp Organization**: Access to the organization created by the developer.
+5. **Dependencies**:
+    - Managed using `conda.yaml` for the Robocorp environment.
+    - A `requirements.txt` file is available for local testing.
 
-There are two ways to test and run the code.
-1. Via Robocorp to run the Robot instance.
-2. To setup virtual env and run the script.
+## Testing the Script
 
-👉 Other templates are available as well via our tooling and on our [Portal](https://robocorp.com/portal/tag/template)
+There are two ways to test the script. This guide focuses on testing using a Python virtual environment.
 
-## Running
+### Step 1: Install `virtualenv` (if not already installed)
+Run the following command to install the `virtualenv` package:
+```bash
+pip install virtualenv
+```
 
-#### VS Code
-1. Get [Robocorp Code](https://robocorp.com/docs/developer-tools/visual-studio-code/extension-features) -extension for VS Code.
-1. You'll get an easy-to-use side panel and powerful command-palette commands for running, debugging, code completion, docs, etc.
+### Step 2: Activate the Virtual Environment
+Once you are in the root folder of the project, activate the virtual environment.
 
-#### Command line
+```bash
+# For Mac
+source venv/bin/activate
+```
+```bash
+# For Windows
+venv\scripts\activate
+```
 
-1. [Get RCC](https://github.com/robocorp/rcc?tab=readme-ov-file#getting-started)
-1. Use the command: `rcc run`
+### Step 3: Set the Environment Variable for the Work Item
+Before running the script, set the required environment variable to point to the Work Item input path:
+```bash
+#For Mac
+export RC_WORKITEM_INPUT_PATH={path_to_project_root}/output/work-items-in/workitems.json
+```
 
-## Results
+### Step 4: Install the Project Dependencies
+Once the virtual environment is activated, install the necessary dependencies by running:
+```bash
+pip install -r requirements.txt
+```
 
-🚀 After running the bot, check out the `log.html` under the `output` -folder.
+## Deployment to Robocorp
+Details for setting up the Robocorp environment and deploying the scraper is provided by Robocorp documentation.
 
-## Dependencies
 
-We strongly recommend getting familiar with adding your dependencies in [conda.yaml](conda.yaml) to control your Python dependencies and the whole Python environment for your automation.
+## Sample output file
+```bash
+  'apnews_data.xlsx'
+```
+Please see image:
+![Screenshot](./sample_images/apnews.png)
 
-<details>
-  <summary>🙋‍♂️ "Why not just pip install...?"</summary>
+This is a sample output using following Workitem data inputs:
+```bash
+  work_items.json
+```
 
-Think of [conda.yaml](conda.yaml) as an equivalent of the requirements.txt, but much better. 👩‍💻 With `conda.yaml`, you are not just controlling your PyPI dependencies; you control the complete Python environment, which makes things repeatable and easy.
+```bash
+[{"payload": {
+  "search_phrase": "Laundering", "category_name":"Videos"
+  }, 
+  "files": {}}]
+```
 
-👉 You will probably need to run your code on another machine quite soon, so by using `conda.yaml`:
-- You can avoid `Works on my machine` -cases
-- You do not need to manage Python installations on all the machines
-- You can control exactly which version of Python your automation will run on 
-  - You'll also control the pip version to avoid dep. resolution changes
-- No need for venv, pyenv, ... tooling and knowledge sharing inside your team.
-- Define dependencies in conda.yaml, let our tooling do the heavy lifting.
-- You get all the content of [conda-forge](https://prefix.dev/channels/conda-forge) without any extra tooling
+## Input Guide
+1. Describing the input **search_phrase** which is anything that you want to search from the search bar for query.
 
-> Dive deeper with [these](https://github.com/robocorp/rcc/blob/master/docs/recipes.md#what-is-in-condayaml) resources.
+2. For filtering of news, customize it with **category_name**.
+- Note: **category_name** has a guide, you cannot put anything to it. 
+- Pick any of the following: (**Live Blogs**, **Stories**, **Subsections**, **Videos**)
+- See APNews Website: https://apnews.com/
+- Sample query: **Fraud**
 
-</details>
-<br/>
-
-> The full power of [rpaframework](https://robocorp.com/docs/python/rpa-framework) -libraries is also available on Python as a backup while we implement the new Python libraries.
-
-## What now?
-
-🚀 Now, go get'em
-
-Start writing Python and remember that the AI/LLM's out there are getting really good and creating Python code specifically.
-
-👉 Try out [Robocorp ReMark 💬](https://chat.robocorp.com)
-
-For more information, do not forget to check out the following:
-- [Robocorp Documentation -site](https://robocorp.com/docs)
-- [Portal for more examples](https://robocorp.com/portal)
-- Follow our main [robocorp -repository](https://github.com/robocorp/robocorp) as it is the main location where we developed the libraries and the framework.
+![Fraud](./sample_images/filter.png)
