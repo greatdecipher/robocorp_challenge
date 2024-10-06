@@ -4,20 +4,27 @@ from webdriver_manager.chrome import ChromeDriverManager as cache
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from bs4 import BeautifulSoup
 
 import logging
 import pandas as pd
 import time, random
+import datetime
+import re
+import xlsxwriter
 
 class ThoughfulScraper:
     def __init__(self, *args, **kwargs):
         self.driver = None
+        self.search_phrase = kwargs.get("search_phrase")
+        self.category_name = kwargs.get("category_name")
         self.logger = logging.getLogger(__name__)
         self.configure_logger()
         self.green = "\033[92m"
         self.red = "\033[91m"
         self.blue = "\033[94m"
         self.yellow = "\033[93m"
+        self.magenta = "\033[95m"
         self.reset = "\033[0m"
         #initialize a pandas dataframe to store the data
         self.df = pd.DataFrame(columns=["Title", "Date","Description", "Picture Filename",
@@ -77,7 +84,7 @@ class ThoughfulScraper:
         return element
 
   
-    def load_home_page(self, topic):
+    def load_home_page(self):
         #check if the search button seen
         self.logger.info(f"{self.blue}Checking if the search button is seen{self.reset}")
         search_btn_element = self.explicit_wait_for_element(15, By.XPATH, '//button[@class="SearchOverlay-search-button"]')
@@ -95,7 +102,7 @@ class ThoughfulScraper:
         #entering the search keyword
         self.logger.info(f"{self.blue}Entering the search keyword{self.reset}")
         time.sleep(self.wait_time(1.2, 2.2))
-        search_value = topic
+        search_value = self.search_phrase
         self.type_with_random_delay(search_input_element, search_value)
         self.logger.info(f"{self.green}Entered '{search_value}' in the search bar{self.reset}")
         time.sleep(self.wait_time(0.3, 1.4))
@@ -121,10 +128,10 @@ class ThoughfulScraper:
         time.sleep(self.wait_time(0.5, 1.5))
 
 
-    def check_if_category_is_present(self, category_name):
+    def check_if_category_is_present(self):
         #click the category Live Blogs, the whitespaces need to be there
         category = f"""
-            {category_name}
+            {self.category_name}
         """
         self.logger.info(f"{self.blue}Checking if the focus category is seen{self.reset}")
         category_element = self.explicit_wait_for_element(15, By.XPATH, f'//span[text()="{category}"]')
@@ -142,12 +149,110 @@ class ThoughfulScraper:
         WebDriverWait(self.driver, 20).until(lambda driver: driver.execute_script("return document.readyState") in ["interactive", "complete"])
         self.logger.info(f"{self.green}All feeds are loaded{self.reset}")
         #check the entry point element
-        self.logger.info(f"{self.blue}Checking if the entry point element is seen{self.reset}")
-        entry_point_element = self.explicit_wait_for_element(15, By.XPATH, '//div[@class="PageList-items"]')
-        self.logger.info(f"{self.green}Expected entry point element seen{self.reset}")
+        # self.logger.info(f"{self.blue}Checking if the entry point element is seen{self.reset}")
+        # entry_point_element = self.explicit_wait_for_element(15, By.XPATH, '//div[@class="PageList-items"]')
+        # self.logger.info(f"{self.green}Expected entry point element seen{self.reset}")
         #loop through the entry point element
-        
-        
+        time.sleep(self.wait_time(1, 2))
+        #parse with beautifulsoup
+        #extract the data
+        self.soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+        #the main container xpath is //div[@class="PageList-items"]
+        #there are multiple cards inside with xpath //div[@class="PageList-items-item"]
+        news_card = self.soup.find_all('div', class_="PageList-items")
+        main_card = news_card[1].find_all('div', class_="PageList-items-item")
+        #get the total number of cards
+        len_cards = len(main_card)
+        self.logger.info(f"{self.yellow}Total number of cards found: {len_cards}{self.reset}")
+        for card in main_card:
+            #getting to the inner content divs
+            page_promo_div = card.find('div')
+            content_div = page_promo_div.find('div', class_="PagePromo-content")
+            #get the title
+            title_div = content_div.find('div', class_="PagePromo-title")
+            title = title_div.find('span').text
+            self.logger.info("-------------------------------------------------")
+            self.logger.info(f"Title: {self.magenta}{title}{self.reset}")
+            #get the date
+            date_div = content_div.find('bsp-timestamp', {'data-timestamp': True})
+            date_raw:int = int(date_div.get('data-timestamp'))
+            date:str = self.convert_timestamp_to_date(date_raw)
+            self.logger.info(f"Date: {self.magenta}{date}{self.reset}")
+            #get the description
+            description_div = content_div.find('div', class_="PagePromo-description")
+            description = description_div.find('span').text
+            self.logger.info(f"Description: {self.magenta}{description}{self.reset}")
+
+            #get the picture filename
+            media_div = page_promo_div.find('div', class_="PagePromo-media")
+            picture_filename = media_div.find('img').get('src')
+            picture_filename = str(picture_filename)
+            self.logger.info(f"Picture Filename: {self.magenta}{picture_filename}{self.reset}")
+
+            #get the count of search phrases
+            #combine the title and description
+            combined_text = title + " " + description
+            count_search_phrases:int = self.get_occurrences(combined_text, self.search_phrase)
+            self.logger.info(f"Count of Search Phrases: {self.magenta}{count_search_phrases}{self.reset}")
+            
+            #check if the combine_text contains the money phrase, Possible formats: $11.1 | $111,111.11 | 11 dollars | 11 USD
+            contains_money_phrase:bool = self.contains_money_phrase(combined_text)
+            self.logger.info(f"Contains Money Phrase: {self.magenta}{contains_money_phrase}{self.reset}")
+            
+            #store the data in a dictionary
+            data_dict = {"Title": title, "Date": date, "Description": description, "Picture Filename": picture_filename,
+                    "Count of Search Phrases": count_search_phrases, "Contains Money Phrase": contains_money_phrase}
+            #add the data to the dataframe
+            self.data_dict_to_df(data_dict)
+
+        self.logger.info(f"{self.green}Dataframe: {self.df.head()}{self.reset}")
+        return self.df
+
+
+    def data_dict_to_df(self, data_dict:dict):
+        new_data = pd.DataFrame([data_dict])
+        # Concatenate the new data with the existing DataFrame
+        self.df = pd.concat([self.df, new_data], ignore_index=True)
+        #show the dataframe
+
+
+    def contains_money_phrase(self, combine_text) -> bool:
+        # Regex pattern to match money phrases
+        pattern = r'\$[\d,]+(\.\d{1,2})?|[\d,]+ dollars|[\d,]+ USD'
+        # Search for the pattern in the provided text
+        return re.search(pattern, combine_text) is not None
+
+    def get_occurrences(self, text, search_phrase) -> int:
+        # Create a regex pattern to match the search phrase, ignoring case and surrounding punctuation
+        pattern = r'\b' + re.escape(search_phrase) + r'\b'
+        matches = re.findall(pattern, text, re.IGNORECASE)  # Use re.IGNORECASE for case-insensitive matching
+        return len(matches)  # Return the number of matches found
+
+    def convert_timestamp_to_date(self, timestamp_ms:int):
+        # Convert the timestamp from milliseconds to seconds
+        timestamp_s = timestamp_ms / 1000  # Convert to seconds
+        # Convert to a human-readable format
+        readable_date = datetime.datetime.fromtimestamp(timestamp_s).strftime('%m-%d-%Y')
+        return readable_date
+
+
+    def save_to_excel(self, df, filename):
+        self.logger.info(f"{self.blue}Saving the data to Excel...{self.reset}")
+        # Open the existing Excel file (or create it)
+        with pd.ExcelWriter(filename, engine='xlsxwriter') as writer:
+            workbook = writer.book
+            # Write the DataFrame to the worksheet starting from row 1, column 0 (A1)
+            df.to_excel(writer, sheet_name='Sheet1', index=False)
+            worksheet = writer.sheets['Sheet1'] # Ensure you target the right sheet
+            # set the column width to fit 100 characters
+            worksheet.set_column('A:A', 100)
+            worksheet.set_column('B:B', 20)
+            worksheet.set_column('C:C', 100)
+            worksheet.set_column('D:D', 100)
+            worksheet.set_column('E:E', 20)
+            worksheet.set_column('F:F', 20)
+        self.logger.info(f"{self.green}Data saved to Excel{self.reset}")
+
 
     def driver_quit(self):
         if self.driver:
@@ -156,15 +261,18 @@ class ThoughfulScraper:
 
 @task
 def minimal_task():
-    scraper = ThoughfulScraper()
+    scraper = ThoughfulScraper({"search_phrase":"Laundering","category_name":"Videos"})
     scraper.set_webdriver()
     # Perform scraping tasks here
     try:
+        filename = "apnews_data.xlsx"
         scraper.goto_link("https://apnews.com/")
-        scraper.load_home_page(topic="Laundering")
+        scraper.load_home_page()
         scraper.load_results_and_filter()
-        scraper.check_if_category_is_present(category_name="Videos")
-        scraper.scrape_data()
+        scraper.check_if_category_is_present()
+        df = scraper.scrape_data()
+        scraper.save_to_excel(df, filename)
+
 
     except Exception as e:
         #if error string error message that is stripped, has first word "Stacktrace".
