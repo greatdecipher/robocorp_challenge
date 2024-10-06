@@ -1,6 +1,7 @@
 from robocorp.tasks import task
 from robocorp import workitems
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager as cache
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -51,9 +52,9 @@ class ThoughfulScraper:
             options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--lang=en-US')
-        # options.add_argument("--disable-extensions")
-        # options.add_argument("--disable-gpu")
-        # options.add_argument('--disable-web-security')
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-gpu")
+        options.add_argument('--disable-web-security')
         options.add_argument("--start-maximized")
         options.add_experimental_option("excludeSwitches", ["enable-logging"])
         return options
@@ -82,6 +83,11 @@ class ThoughfulScraper:
             for _ in range(attempts):
                 try:
                     return func(self, *args, **kwargs)
+                except WebDriverException as e:
+                    self.logger.error(f"{self.red}WebDriver Error: {e}{self.reset}")
+                    self.logger.warning(f"{self.yellow}Retrying...{self.reset}")
+                    self._handle_browser_crash()
+                    time.sleep(self.wait_time(8, 11))
                 except Exception as e:
                     self.logger.error(f"{self.red}Error: {e}{self.reset}")
                     self.logger.warning(f"{self.yellow}Retrying...{self.reset}")
@@ -90,6 +96,20 @@ class ThoughfulScraper:
             self.logger.error(f"{self.red}Failed after {attempts} attempts{self.reset}")
             raise Exception(f"Failed after {attempts} attempts")
         return wrapper
+
+
+    def _handle_browser_crash(self):
+        try:
+            # Handle the browser crash by quitting and restarting the browser session
+            self.driver.quit()
+            time.sleep(5)  # Give it some time before restarting
+            self.logger.info(f"{self.yellow}Restarting browser after crash...{self.reset}")
+            
+            # Initialize the driver again (you might need to adjust this part based on your driver setup)
+            self.driver = self.initialize_driver()
+        except Exception as e:
+            self.logger.error(f"{self.red}Failed to restart browser: {e}{self.reset}")
+            raise Exception("Failed to restart browser")
 
     @retry_page_decorator
     def goto_link(self, link):
