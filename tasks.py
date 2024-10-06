@@ -48,13 +48,13 @@ class ThoughfulScraper:
         options = webdriver.ChromeOptions()
         if self.headless:
             self.logger.warning(f"{self.yellow}Running in headless mode{self.reset}")
-            # options.add_argument('--headless')
+            options.add_argument('--headless')
         # options.add_argument('--no-sandbox')
-        # options.add_argument('--lang=en-US')
+        options.add_argument('--lang=en-US')
         options.add_argument("--disable-extensions")
         options.add_argument("--disable-gpu")
-        options.add_argument('--disable-web-security')
-        options.add_argument("--start-maximized")
+        # options.add_argument('--disable-web-security')
+        # options.add_argument("--start-maximized")
         options.add_experimental_option("excludeSwitches", ["enable-logging"])
         return options
     
