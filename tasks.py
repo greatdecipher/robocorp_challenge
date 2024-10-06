@@ -11,7 +11,6 @@ import pandas as pd
 import time, random
 import datetime
 import re
-import xlsxwriter
 
 class ThoughfulScraper:
     def __init__(self, *args, **kwargs):
