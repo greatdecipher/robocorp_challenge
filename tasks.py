@@ -75,7 +75,7 @@ class ThoughfulScraper:
         for char in text:
             time.sleep(self.wait_time(0.03, 0.19))
             locator.send_keys(char)
-            
+
     def retry_page_decorator(func):
         def wrapper(self, *args, **kwargs):
             attempts = 5
@@ -88,7 +88,7 @@ class ThoughfulScraper:
                     self.driver.refresh()
                     time.sleep(self.wait_time(8,11))
             self.logger.error(f"{self.red}Failed after {attempts} attempts{self.reset}")
-            raise Exception("Failed after 3 attempts")
+            raise Exception(f"Failed after {attempts} attempts")
         return wrapper
 
     @retry_page_decorator
@@ -104,11 +104,11 @@ class ThoughfulScraper:
         )
         return element
 
-  
+    @retry_page_decorator
     def load_home_page(self):
         #check if the search button seen
         self.logger.info(f"{self.blue}Checking if the search button is seen{self.reset}")
-        search_btn_element = self.explicit_wait_for_element(15, By.XPATH, '//button[@class="SearchOverlay-search-button"]')
+        search_btn_element = self.explicit_wait_for_element(30, By.XPATH, '//button[@class="SearchOverlay-search-button"]')
         self.logger.info(f"{self.green}Expected button seen{self.reset}")
         #clicking the search button
         self.logger.info(f"{self.blue}Attempt to click the search button{self.reset}")
@@ -117,7 +117,7 @@ class ThoughfulScraper:
         time.sleep(self.wait_time(0.25, 1.25))
         #check if the search input seen
         self.logger.info(f"{self.blue}Checking if the search input is seen{self.reset}")
-        search_input_element = self.explicit_wait_for_element(15, By.XPATH, '//input[@placeholder="Keyword Search..."]')
+        search_input_element = self.explicit_wait_for_element(30, By.XPATH, '//input[@placeholder="Keyword Search..."]')
         self.logger.info(f"{self.green}Expected input seen{self.reset}")
         time.sleep(self.wait_time(1, 2))
         #entering the search keyword
@@ -128,18 +128,18 @@ class ThoughfulScraper:
         self.logger.info(f"{self.green}Entered '{search_value}' in the search bar{self.reset}")
         time.sleep(self.wait_time(0.3, 1.4))
         #searching the keyword
-        results_btn_element = self.explicit_wait_for_element(15, By.XPATH, '//button[@class="SearchOverlay-search-submit"]')
+        results_btn_element = self.explicit_wait_for_element(30, By.XPATH, '//button[@class="SearchOverlay-search-submit"]')
         self.logger.info(f"{self.blue}Attempting to click the search result button{self.reset}")
         results_btn_element.click()
         self.logger.info(f"{self.green}Clicked to Search for results...{self.reset}")
         time.sleep(self.wait_time(1, 3))
         # now unfiltered results seen.
 
-
+    @retry_page_decorator
     def load_results_and_filter(self):
         #check if category dropdown seen
         self.logger.info(f"{self.blue}Checking if the category dropdown is seen{self.reset}")
-        category_dropdown_element = self.explicit_wait_for_element(15, By.XPATH, '//div[@class="SearchFilter-heading"]')
+        category_dropdown_element = self.explicit_wait_for_element(30, By.XPATH, '//div[@class="SearchFilter-heading"]')
         self.logger.info(f"{self.green}Expected category dropdown seen{self.reset}")
         #clicking the category dropdown
         time.sleep(self.wait_time(1, 2.2))
@@ -148,14 +148,14 @@ class ThoughfulScraper:
         self.logger.info(f"{self.green}Clicked the category dropdown{self.reset}")
         time.sleep(self.wait_time(0.5, 1.5))
 
-
+    @retry_page_decorator
     def check_if_category_is_present(self):
         #click the category Live Blogs, the whitespaces need to be there
         category = f"""
             {self.category_name}
         """
         self.logger.info(f"{self.blue}Checking if the focus category is seen{self.reset}")
-        category_element = self.explicit_wait_for_element(15, By.XPATH, f'//span[text()="{category}"]')
+        category_element = self.explicit_wait_for_element(30, By.XPATH, f'//span[text()="{category}"]')
         self.logger.info(f"{self.green}Expected focus category seen{self.reset}")
         #clicking the category
         self.logger.info(f"{self.blue}Attempting to click the category '{self.category_name}'{self.reset}")
@@ -163,7 +163,7 @@ class ThoughfulScraper:
         self.logger.info(f"{self.green}Clicked the category '{self.category_name}'{self.reset}")
         time.sleep(self.wait_time(1.5, 2.5))
 
-
+    @retry_page_decorator
     def scrape_data(self):
         #make sure to load the page first
         self.logger.info(f"{self.blue}Loading the data...{self.reset}")
@@ -171,7 +171,7 @@ class ThoughfulScraper:
         self.logger.info(f"{self.green}All feeds are loaded{self.reset}")
         #check the entry point element
         # self.logger.info(f"{self.blue}Checking if the entry point element is seen{self.reset}")
-        # entry_point_element = self.explicit_wait_for_element(15, By.XPATH, '//div[@class="PageList-items"]')
+        # entry_point_element = self.explicit_wait_for_element(30, By.XPATH, '//div[@class="PageList-items"]')
         # self.logger.info(f"{self.green}Expected entry point element seen{self.reset}")
         #loop through the entry point element
         time.sleep(self.wait_time(1, 2))
